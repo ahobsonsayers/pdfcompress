@@ -1,0 +1,16 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  format:
+    cmds:
+      - uv run ruff format .
+
+  lint:
+    cmds:
+      - uv run ruff lint .
+
+  run:
+    cmds:
+      - uv run pdf2imgs.py
