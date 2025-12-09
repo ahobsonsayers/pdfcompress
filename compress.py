@@ -37,6 +37,7 @@ def convert_to_jpg(
         output_folder=output_dir_path,
         output_file="page",
         paths_only=True,
+        use_pdftocairo=True,
     )
     print("PDF to JPG conversion complete")
 
