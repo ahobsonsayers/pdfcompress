@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import img2pdf
 from pdf2image import convert_from_path
 
 FILES_DIR = Path("./files")
@@ -15,7 +15,13 @@ if not pdf_path.exists():
 jpg_dir = FILES_DIR / "jpg"
 png_dir = FILES_DIR / "png"
 
-def convert_to_jpg(pdf_path: Path, output_dir_path: Path, dpi: int, quality: int,):
+
+def convert_to_jpg(
+    pdf_path: Path,
+    output_dir_path: Path,
+    dpi: int,
+    quality: int,
+):
     output_dir_path.mkdir(parents=True, exist_ok=True)
 
     print(f"Converting PDF to JPG at {DPI} DPI, quality {JPG_QUALITY}...")
@@ -23,7 +29,10 @@ def convert_to_jpg(pdf_path: Path, output_dir_path: Path, dpi: int, quality: int
         str(pdf_path),
         dpi=dpi,
         fmt="jpeg",
-        jpegopt={"quality": quality, "optimize": True,},
+        jpegopt={
+            "quality": quality,
+            "optimize": True,
+        },
         thread_count=4,
         output_folder=output_dir_path,
         output_file="page",
@@ -34,7 +43,12 @@ def convert_to_jpg(pdf_path: Path, output_dir_path: Path, dpi: int, quality: int
     print_dir_size(output_dir_path)
     print()
 
-def convert_to_png(pdf_path: Path, output_dir_path: Path, dpi: int,):
+
+def convert_to_png(
+    pdf_path: Path,
+    output_dir_path: Path,
+    dpi: int,
+):
     output_dir_path.mkdir(parents=True, exist_ok=True)
 
     print(f"Converting PDF to PNG at {DPI} DPI...")
@@ -52,10 +66,15 @@ def convert_to_png(pdf_path: Path, output_dir_path: Path, dpi: int,):
     print_dir_size(png_dir)
     print()
 
+
 def print_dir_size(directory: Path):
     dir_bytes = sum(f.stat().st_size for f in directory.glob("*") if f.is_file())
     dir_mb = dir_bytes / (1024 * 1024)
     print(f"{directory.name} total size: {dir_mb:.2f} MB")
 
+
 convert_to_jpg(PDF_PATH, jpg_dir, DPI, JPG_QUALITY)
 # convert_to_png(PDF_PATH, png_dir, DPI)
+
+with open(jpg_dir / "output.pdf", "wb") as output_file:
+    output_file.write(img2pdf.convert(jpg_dir.glob("*.jpg")))

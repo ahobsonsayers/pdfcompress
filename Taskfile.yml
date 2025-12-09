@@ -13,4 +13,4 @@ tasks:
 
   run:
     cmds:
-      - uv run pdf2imgs.py
+      - uv run compress.py
