@@ -1,12 +1,13 @@
 from pathlib import Path
+import shutil
 import img2pdf
 from pdf2image import convert_from_path
 
 FILES_DIR = Path("./files")
 PDF_PATH = FILES_DIR / "input.pdf"
 
-DPI = 200
-JPG_QUALITY = 85
+DPI = 300
+JPG_QUALITY = 75
 
 pdf_path = Path(PDF_PATH)
 if not pdf_path.exists():
@@ -16,16 +17,17 @@ jpg_dir = FILES_DIR / "jpg"
 png_dir = FILES_DIR / "png"
 
 
-def convert_to_jpg(
+def pdf_to_jpg_cairo(
     pdf_path: Path,
     output_dir_path: Path,
     dpi: int,
     quality: int,
 ):
+    shutil.rmtree(output_dir_path, ignore_errors=True)
     output_dir_path.mkdir(parents=True, exist_ok=True)
 
     print(f"Converting PDF to JPG at {DPI} DPI, quality {JPG_QUALITY}...")
-    convert_from_path(
+    images = convert_from_path(
         str(pdf_path),
         dpi=dpi,
         fmt="jpeg",
@@ -35,37 +37,26 @@ def convert_to_jpg(
         },
         thread_count=4,
         output_folder=output_dir_path,
-        output_file="page",
+        output_file="page-",
         paths_only=True,
         use_pdftocairo=True,
     )
-    print("PDF to JPG conversion complete")
+    print("PDF to JPG conversion complete\n")
+
+    image_paths = []
+    for image in images:
+        image_path = Path(str(image))
+
+        parts = image_path.name.split("-")
+        if len(parts) > 2:
+            new_name = "-".join([parts[0], parts[2]])
+            image_path = image_path.rename(image_path.with_name(new_name))
+
+        image_paths.append(image_path)
 
     print_dir_size(output_dir_path)
-    print()
 
-
-def convert_to_png(
-    pdf_path: Path,
-    output_dir_path: Path,
-    dpi: int,
-):
-    output_dir_path.mkdir(parents=True, exist_ok=True)
-
-    print(f"Converting PDF to PNG at {DPI} DPI...")
-    convert_from_path(
-        pdf_path,
-        dpi=dpi,
-        fmt="png",
-        thread_count=4,
-        output_folder=output_dir_path,
-        output_file="page",
-        paths_only=True,
-    )
-    print("PDF to PNG conversion complete")
-
-    print_dir_size(png_dir)
-    print()
+    return image_paths
 
 
 def print_dir_size(directory: Path):
@@ -74,8 +65,9 @@ def print_dir_size(directory: Path):
     print(f"{directory.name} total size: {dir_mb:.2f} MB")
 
 
-convert_to_jpg(PDF_PATH, jpg_dir, DPI, JPG_QUALITY)
-# convert_to_png(PDF_PATH, png_dir, DPI)
+image_paths = pdf_to_jpg_cairo(PDF_PATH, jpg_dir, DPI, JPG_QUALITY)
 
-with open(jpg_dir / "output.pdf", "wb") as output_file:
-    output_file.write(img2pdf.convert(jpg_dir.glob("*.jpg")))
+pdf_bytes = img2pdf.convert([str(path) for path in image_paths])
+if pdf_bytes:
+    with open(FILES_DIR / "output.pdf", "wb") as output_file:
+        output_file.write(pdf_bytes)
