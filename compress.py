@@ -1,7 +1,7 @@
 from pathlib import Path
 import shutil
 import img2pdf
-from pdf2image import convert_from_path
+import pypdfium2 as pdfium
 
 FILES_DIR = Path("./files")
 PDF_PATH = FILES_DIR / "input.pdf"
@@ -17,7 +17,7 @@ jpg_dir = FILES_DIR / "jpg"
 png_dir = FILES_DIR / "png"
 
 
-def pdf_to_jpg_cairo(
+def pdf_to_jpg(
     pdf_path: Path,
     output_dir_path: Path,
     dpi: int,
@@ -26,33 +26,31 @@ def pdf_to_jpg_cairo(
     shutil.rmtree(output_dir_path, ignore_errors=True)
     output_dir_path.mkdir(parents=True, exist_ok=True)
 
-    print(f"Converting PDF to JPG at {DPI} DPI, quality {JPG_QUALITY}...")
-    images = convert_from_path(
-        str(pdf_path),
-        dpi=dpi,
-        fmt="jpeg",
-        jpegopt={
-            "quality": quality,
-            "optimize": True,
-        },
-        thread_count=4,
-        output_folder=output_dir_path,
-        output_file="page-",
-        paths_only=True,
-        use_pdftocairo=True,
-    )
-    print("PDF to JPG conversion complete\n")
+    print(f"Converting PDF to JPG at {dpi} DPI, quality {quality}...")
 
-    image_paths = []
-    for image in images:
-        image_path = Path(str(image))
+    scale = dpi / 72.0
 
-        parts = image_path.name.split("-")
-        if len(parts) > 2:
-            new_name = "-".join([parts[0], parts[2]])
-            image_path = image_path.rename(image_path.with_name(new_name))
+    pdf = pdfium.PdfDocument(pdf_path)
+
+    image_paths: list[Path] = []
+    n_pages = len(pdf)
+    for i in range(n_pages):
+        page = pdf[i]
+        bitmap = page.render(scale=scale, rotation=0)
+        image = bitmap.to_pil()
+
+        image_path = output_dir_path / f"page-{i + 1:02d}.jpg"
+
+        image.save(
+            image_path,
+            "JPEG",
+            quality=quality,
+            optimize=True,
+        )
 
         image_paths.append(image_path)
+
+    print("PDF to JPG conversion complete")
 
     print_dir_size(output_dir_path)
 
@@ -65,7 +63,7 @@ def print_dir_size(directory: Path):
     print(f"{directory.name} total size: {dir_mb:.2f} MB")
 
 
-image_paths = pdf_to_jpg_cairo(PDF_PATH, jpg_dir, DPI, JPG_QUALITY)
+image_paths = pdf_to_jpg(PDF_PATH, jpg_dir, DPI, JPG_QUALITY)
 
 pdf_bytes = img2pdf.convert([str(path) for path in image_paths])
 if pdf_bytes:
