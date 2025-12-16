@@ -7,7 +7,7 @@ FILES_DIR = Path("./files")
 PDF_PATH = FILES_DIR / "input.pdf"
 
 DPI = 300
-JPG_QUALITY = 75
+JPG_QUALITY = 68
 
 pdf_path = Path(PDF_PATH)
 if not pdf_path.exists():

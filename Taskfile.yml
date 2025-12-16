@@ -10,7 +10,16 @@ tasks:
   lint:
     cmds:
       - uv run ruff check .
+      - shellcheck .
 
-  run:
+  compress:
     cmds:
       - uv run compress.py
+  
+  svg2pdf:
+    cmds:
+      - |
+        ./scripts/svg2pdf.sh \
+          ./input/images/svg \
+          ./output/images/png\
+          500
