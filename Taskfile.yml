@@ -6,6 +6,7 @@ tasks:
   format:
     cmds:
       - uv run ruff format .
+      - shfmt -i 2 -s -w .
 
   lint:
     cmds:
@@ -15,11 +16,11 @@ tasks:
   compress:
     cmds:
       - uv run compress.py
-  
+
   svg2pdf:
     cmds:
       - |
-        ./scripts/svg2pdf.sh \
-          ./input/images/svg \
-          ./output/images/png\
-          500
+        ./scripts/svg2png.sh \
+          ./files/input/image/svg \
+          ./files/output/image/png \
+          300
