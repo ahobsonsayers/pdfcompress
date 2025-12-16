@@ -16,16 +16,19 @@ mkdir -p "$OUTPUT_DIR"
 SVG_PATHS="$(
   find "$INPUT_DIR" \
     -type f \
-    -name '*.svg'
+    \( -name '*.svg' -o -name '*.svgz' \)
 )"
 
-for SVG_PATH in $SVG_PATHS; do
-  IMAGE_NAME="$(basename "$SVG_PATH")"
+while read -r SVG_PATH; do
+  SVG_NAME="$(basename "$SVG_PATH")"
+  IMAGE_NAME="${SVG_NAME%.*}"
   PNG_PATH="$OUTPUT_DIR/$IMAGE_NAME.png"
 
   echo "Converting svg to png: $IMAGE_NAME"
   inkscape "$SVG_PATH" \
-    --export-type=png
-    --export-dpi="$DPI" 
+    --export-type=png \
+    --export-dpi="$DPI" \
     --export-filename="$PNG_PATH"
-done
+  echo
+
+done <<<"$SVG_PATHS"
