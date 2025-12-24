@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-set -euo pipefail # Strict
+set -euo pipefail
 
 if [[ $# -ne 3 ]]; then
-  echo "Usage: $(basename "$0") <input-dir> <output-dir> <dpi>"
+  echo "Usage: $(basename "$0") <input-dir> <output-dir> <pixels>"
   exit 1
 fi
 
 INPUT_DIR="$1"
 OUTPUT_DIR="$2"
-DPI="$3"
+PIXELS="$3"
 
 mkdir -p "$INPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
@@ -26,9 +26,13 @@ while read -r SVG_PATH; do
 
   echo "Converting svg to png: $IMAGE_NAME"
   inkscape "$SVG_PATH" \
-    --export-type=png \
-    --export-dpi="$DPI" \
-    --export-filename="$PNG_PATH"
+    --export-filename="$PNG_PATH" \
+    --export-width="$PIXELS" \
+    --export-height="$PIXELS"
+  # rsvg-convert \
+  #   --width="${PIXELS}px" \
+  #   --height="${PIXELS}px" \
+  #   --keep-aspect-ratio "$SVG_PATH" > "$PNG_PATH"
   echo
 
 done <<<"$SVG_PATHS"
