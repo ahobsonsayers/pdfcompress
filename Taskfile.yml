@@ -3,6 +3,10 @@
 version: "3"
 
 tasks:
+  install:
+    cmds:
+      - brew install pdf2svg librsvg
+
   format:
     cmds:
       - uv run ruff format .
@@ -13,14 +17,35 @@ tasks:
       - uv run ruff check .
       - shellcheck .
 
-  compress:
+  pdf2svg:
     cmds:
-      - uv run compress.py
+      - |
+        ./scripts/pdf2svg.sh \
+          ./files/drawing-pdfs \
+          ./files/drawing-svgs
 
-  svg2pdf:
+  svg2png:
     cmds:
       - |
         ./scripts/svg2png.sh \
-          ./files/input/image/svg \
-          ./files/output/image/png \
-          300
+          ./files/drawing-svgs \
+          ./files/drawing-pngs \
+          10000
+
+  compress-images:
+    cmds:
+      - |
+        uv run ./scripts/pdf_compress_images.py \
+          ./files/input.pdf \
+          ./files/output.pdf \
+          200 \
+          48
+
+  compress:
+    cmds:
+      - |
+        uv run ./scripts/pdf_compress.py \
+          ./files/input.pdf \
+          ./files/output.pdf \
+          300 \
+          78
