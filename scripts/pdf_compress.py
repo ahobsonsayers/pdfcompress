@@ -1,71 +1,76 @@
 from pathlib import Path
-import shutil
+import tempfile
 import img2pdf
 import pypdfium2 as pdfium
+import sys
 
-FILES_DIR = Path("./files")
-PDF_PATH = FILES_DIR / "input.pdf"
+if len(sys.argv) != 5:
+    print(f"Usage: {sys.argv[0]} <input-pdf> <output-pdf> <dpi> <jpg-quality>")
+    sys.exit(1)
 
-DPI = 300
-JPG_QUALITY = 68
+input_pdf_path = Path(sys.argv[1])
+output_pdf_path = Path(sys.argv[2])
+dpi = int(sys.argv[3])
+jpg_quality = int(sys.argv[4])
 
-pdf_path = Path(PDF_PATH)
-if not pdf_path.exists():
-    raise FileNotFoundError(f"PDF not found: {pdf_path}")
-
-jpg_dir = FILES_DIR / "jpg"
-png_dir = FILES_DIR / "png"
+if not input_pdf_path.exists():
+    raise FileNotFoundError(f"pdf not found: {input_pdf_path}")
 
 
-def pdf_to_jpg(
-    pdf_path: Path,
-    output_dir_path: Path,
+def pdf_to_jpg_to_pdf(
+    input_pdf_path: Path,
+    output_pdf_path: Path,
     dpi: int,
     quality: int,
 ):
-    shutil.rmtree(output_dir_path, ignore_errors=True)
-    output_dir_path.mkdir(parents=True, exist_ok=True)
-
-    print(f"Converting PDF to JPG at {dpi} DPI, quality {quality}...")
-
     scale = dpi / 72.0
 
-    pdf = pdfium.PdfDocument(pdf_path)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir_path = Path(temp_dir)
 
-    image_paths: list[Path] = []
-    n_pages = len(pdf)
-    for i in range(n_pages):
-        page = pdf[i]
-        bitmap = page.render(scale=scale, rotation=0)
-        image = bitmap.to_pil()
+        pdf = pdfium.PdfDocument(input_pdf_path)
 
-        image_path = output_dir_path / f"page-{i + 1:02d}.jpg"
+        image_paths: list[Path] = []
+        n_pages = len(pdf)
+        for i in range(n_pages):
+            page = pdf[i]
+            bitmap = page.render(scale=scale, rotation=0)
+            image = bitmap.to_pil()
 
-        image.save(
-            image_path,
-            "JPEG",
-            quality=quality,
-            optimize=True,
-        )
+            image_path = temp_dir_path / f"page-{i + 1:04d}.jpg"
 
-        image_paths.append(image_path)
+            image.save(
+                image_path,
+                "JPEG",
+                quality=quality,
+                optimize=True,
+            )
 
-    print("PDF to JPG conversion complete")
+            image_paths.append(image_path)
 
-    print_dir_size(output_dir_path)
+        pdf.close()
 
-    return image_paths
-
-
-def print_dir_size(directory: Path):
-    dir_bytes = sum(f.stat().st_size for f in directory.glob("*") if f.is_file())
-    dir_mb = dir_bytes / (1024 * 1024)
-    print(f"{directory.name} total size: {dir_mb:.2f} MB")
+        # Convert JPG images back to PDF
+        pdf_bytes = img2pdf.convert([str(path) for path in image_paths])
+        if pdf_bytes:
+            with open(output_pdf_path, "wb") as output_file:
+                output_file.write(pdf_bytes)
 
 
-image_paths = pdf_to_jpg(PDF_PATH, jpg_dir, DPI, JPG_QUALITY)
+def print_file_sizes(original_path: Path, compressed_path: Path):
+    original_mb = original_path.stat().st_size / (1024 * 1024)
+    compressed_mb = compressed_path.stat().st_size / (1024 * 1024)
+    reduction = ((original_mb - compressed_mb) / original_mb) * 100
 
-pdf_bytes = img2pdf.convert([str(path) for path in image_paths])
-if pdf_bytes:
-    with open(FILES_DIR / "output.pdf", "wb") as output_file:
-        output_file.write(pdf_bytes)
+    print(f"Original PDF size: {original_mb:.2f} MB")
+    print(f"Compressed PDF size: {compressed_mb:.2f} MB")
+    print(f"Size reduction: {reduction:.1f}%")
+
+
+pdf_to_jpg_to_pdf(
+    input_pdf_path,
+    output_pdf_path,
+    dpi,
+    jpg_quality,
+)
+print_file_sizes(input_pdf_path, output_pdf_path)
