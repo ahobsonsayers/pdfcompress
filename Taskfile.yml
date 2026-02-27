@@ -39,7 +39,7 @@ tasks:
           ./files/input.pdf \
           ./files/output.pdf \
           200 \
-          48
+          50
 
   compress:
     cmds:

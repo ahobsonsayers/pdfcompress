@@ -26,21 +26,21 @@ def compress_pdf_images(
     # Compress images using PyMuPDF's built-in method
     doc.rewrite_images(
         dpi_threshold=dpi + 1,
-        dpi_target=dpi,  
-        quality=quality,  
-        lossy=True,  
-        lossless=True,  
-        bitonal=True,  
-        color=True,  
-        gray=True,  
-        set_to_gray=False,  
+        dpi_target=dpi,
+        quality=quality,
+        lossy=True,
+        lossless=True,
+        bitonal=True,
+        color=True,
+        gray=True,
+        set_to_gray=False,
     )
 
     doc.save(
         output_pdf_path,
         garbage=4,
-        clean=True, 
-        deflate=True,  
+        clean=True,
+        deflate=True,
         deflate_images=True,
         deflate_fonts=True,
         use_objstms=True,
